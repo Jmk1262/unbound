@@ -348,7 +348,8 @@ static struct ub_event_base_vmt default_event_base_vmt = {
 };
 
 struct ub_event_base*
-ub_default_event_base(int sigs, time_t* time_secs, struct timeval* time_tv)
+ub_default_event_base(int sigs, time_t* time_secs, struct timeval* time_tv,
+	time_t* m_time_secs, struct timespec* m_time_tv)
 {
 	struct my_event_base* my_base = (struct my_event_base*)calloc(1,
 		sizeof(struct my_event_base));
@@ -359,7 +360,8 @@ ub_default_event_base(int sigs, time_t* time_secs, struct timeval* time_tv)
 #ifdef USE_MINI_EVENT
 	(void)sigs;
 	/* use mini event time-sharing feature */
-	my_base->base = event_init(time_secs, time_tv);
+	my_base->base = event_init(time_secs, time_tv, m_time_secs,
+		m_time_tv);
 #else
 	(void)time_secs;
 	(void)time_tv;
@@ -672,8 +674,9 @@ ub_winsock_tcp_wouldblock(struct ub_event* ev, int eventbits)
 
 void ub_comm_base_now(struct comm_base* cb)
 {
-	time_t *tt;
+	time_t *tt, *m_tt;
 	struct timeval *tv;
+	struct timespec* m_tv;
 
 #ifdef USE_MINI_EVENT
 /** minievent updates the time when it blocks. */
@@ -683,10 +686,14 @@ void ub_comm_base_now(struct comm_base* cb)
 #endif /* USE_MINI_EVENT */
 
 /** fillup the time values in the event base */
-	comm_base_timept(cb, &tt, &tv);
+	comm_base_timept(cb, &tt, &tv, &m_tt, &m_tv);
 	if(gettimeofday(tv, NULL) < 0) {
 		log_err("gettimeofday: %s", strerror(errno));
 	}
+	if(clock_gettime(CLOCK_MONOTONIC_RAW, m_tv) < 0) {
+		log_err("clock_gettime: %s", strerror(errno));
+	}
 	*tt = tv->tv_sec;
+	*m_tt = m_tv->tv_sec;
 }
 

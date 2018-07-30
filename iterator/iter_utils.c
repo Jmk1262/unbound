@@ -443,7 +443,7 @@ iter_server_selection(struct iter_env* iter_env,
 	int selrtt;
 	struct delegpt_addr* a, *prev;
 	int num = iter_filter_order(iter_env, env, name, namelen, qtype,
-		*env->now, dp, &selrtt, open_target, blacklist, prefetch);
+		*env->m_now, dp, &selrtt, open_target, blacklist, prefetch);
 
 	if(num == 0)
 		return NULL;
@@ -709,7 +709,7 @@ iter_indicates_dnssec(struct module_env* env, struct delegpt* dp,
 	/* look in key cache */
 	if(env->key_cache) {
 		struct key_entry_key* kk = key_cache_obtain(env->key_cache,
-			dp->name, dp->namelen, dclass, env->scratch, *env->now);
+			dp->name, dp->namelen, dclass, env->scratch, *env->m_now);
 		if(kk) {
 			if(query_dname_compare(kk->name, dp->name) == 0) {
 			  if(key_entry_isgood(kk) || key_entry_isbad(kk)) {
@@ -903,7 +903,7 @@ iter_store_parentside_rrset(struct module_env* env,
 	struct ub_packed_rrset_key* rrset)
 {
 	struct rrset_ref ref;
-	rrset = packed_rrset_copy_alloc(rrset, env->alloc, *env->now);
+	rrset = packed_rrset_copy_alloc(rrset, env->alloc, *env->m_now);
 	if(!rrset) {
 		log_err("malloc failure in store_parentside_rrset");
 		return;
@@ -913,7 +913,7 @@ iter_store_parentside_rrset(struct module_env* env,
 	ref.key = rrset;
 	ref.id = rrset->id;
 	/* ignore ret: if it was in the cache, ref updated */
-	(void)rrset_cache_update(env->rrset_cache, &ref, env->alloc, *env->now);
+	(void)rrset_cache_update(env->rrset_cache, &ref, env->alloc, *env->m_now);
 }
 
 /** fetch NS record from reply, if any */
@@ -1005,7 +1005,7 @@ iter_lookup_parent_NS_from_cache(struct module_env* env, struct delegpt* dp,
 	struct ub_packed_rrset_key* akey;
 	akey = rrset_cache_lookup(env->rrset_cache, dp->name, 
 		dp->namelen, LDNS_RR_TYPE_NS, qinfo->qclass, 
-		PACKED_RRSET_PARENT_SIDE, *env->now, 0);
+		PACKED_RRSET_PARENT_SIDE, *env->m_now, 0);
 	if(akey) {
 		log_rrset_key(VERB_ALGO, "found parent-side NS in cache", akey);
 		dp->has_parent_side_NS = 1;
@@ -1029,7 +1029,7 @@ int iter_lookup_parent_glue_from_cache(struct module_env* env,
 		/* get cached parentside A */
 		akey = rrset_cache_lookup(env->rrset_cache, ns->name, 
 			ns->namelen, LDNS_RR_TYPE_A, qinfo->qclass, 
-			PACKED_RRSET_PARENT_SIDE, *env->now, 0);
+			PACKED_RRSET_PARENT_SIDE, *env->m_now, 0);
 		if(akey) {
 			log_rrset_key(VERB_ALGO, "found parent-side", akey);
 			ns->done_pside4 = 1;
@@ -1041,7 +1041,7 @@ int iter_lookup_parent_glue_from_cache(struct module_env* env,
 		/* get cached parentside AAAA */
 		akey = rrset_cache_lookup(env->rrset_cache, ns->name, 
 			ns->namelen, LDNS_RR_TYPE_AAAA, qinfo->qclass, 
-			PACKED_RRSET_PARENT_SIDE, *env->now, 0);
+			PACKED_RRSET_PARENT_SIDE, *env->m_now, 0);
 		if(akey) {
 			log_rrset_key(VERB_ALGO, "found parent-side", akey);
 			ns->done_pside6 = 1;

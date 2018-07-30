@@ -285,10 +285,10 @@ enum sec_status dnskey_verify_rrset(struct module_env* env,
  *	or unchecked on error.
  */
 enum sec_status dnskeyset_verify_rrset_sig(struct module_env* env, 
-	struct val_env* ve, time_t now, struct ub_packed_rrset_key* rrset, 
-	struct ub_packed_rrset_key* dnskey, size_t sig_idx, 
-	struct rbtree_type** sortree, char** reason, sldns_pkt_section section,
-	struct module_qstate* qstate);
+	struct val_env* ve, time_t now, time_t m_now, 
+	struct ub_packed_rrset_key* rrset, struct ub_packed_rrset_key* dnskey,
+	size_t sig_idx, struct rbtree_type** sortree, char** reason,
+	sldns_pkt_section section, struct module_qstate* qstate);
 
 /** 
  * verify rrset, with specific dnskey(from set), for a specific rrsig 
@@ -312,7 +312,7 @@ enum sec_status dnskeyset_verify_rrset_sig(struct module_env* env,
  *	bogus if it did not validate.
  */
 enum sec_status dnskey_verify_rrset_sig(struct regional* region, 
-	struct sldns_buffer* buf, struct val_env* ve, time_t now,
+	struct sldns_buffer* buf, struct val_env* ve, time_t now, time_t m_now,
 	struct ub_packed_rrset_key* rrset, struct ub_packed_rrset_key* dnskey, 
 	size_t dnskey_idx, size_t sig_idx,
 	struct rbtree_type** sortree, int* buf_canon, char** reason,

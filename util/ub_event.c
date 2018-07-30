@@ -207,7 +207,8 @@ ub_get_event_sys(struct ub_event_base* base, const char** n, const char** s,
 }
 
 struct ub_event_base*
-ub_default_event_base(int sigs, time_t* time_secs, struct timeval* time_tv)
+ub_default_event_base(int sigs, time_t* time_secs, struct timeval* time_tv,
+	time_t* monotonic_time_secs, struct timespec* monotonic_time_tp)
 {
 	void* base;
 
@@ -215,7 +216,8 @@ ub_default_event_base(int sigs, time_t* time_secs, struct timeval* time_tv)
 #ifdef USE_MINI_EVENT
 	(void)sigs;
 	/* use mini event time-sharing feature */
-	base = event_init(time_secs, time_tv);
+	base = event_init(time_secs, time_tv, monotonic_time_secs,
+		monotonic_time_tp);
 #else
 	(void)time_secs;
 	(void)time_tv;
@@ -438,13 +440,18 @@ void ub_comm_base_now(struct comm_base* cb)
 	(void)cb; /* nothing to do */
 #else /* !USE_MINI_EVENT */
 /** fillup the time values in the event base */
-	time_t *tt;
+	time_t *tt, *m_tt;
 	struct timeval *tv;
-	comm_base_timept(cb, &tt, &tv);
+	struct timespec* m_tv;
+	comm_base_timept(cb, &tt, &tv, &m_tt, &m_tv);
 	if(gettimeofday(tv, NULL) < 0) {
 		log_err("gettimeofday: %s", strerror(errno));
 	}
+	if(clock_gettime(CLOCK_MONOTONIC_RAW, m_tv) < 0) {
+		log_err("clock_gettime: %s", strerror(errno));
+	}
 	*tt = tv->tv_sec;
+	*m_tt = m_tv->tv_sec;
 #endif /* USE_MINI_EVENT */
 }
 

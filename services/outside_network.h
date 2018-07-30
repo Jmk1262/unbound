@@ -74,6 +74,10 @@ struct outside_network {
 	time_t* now_secs;
 	/** pointer to time in microseconds */
 	struct timeval* now_tv;
+	/** pointer to monotonic time in seconds */
+	time_t* m_now_secs;
+	/** pointer to monotonic time in nanoseconds */
+	struct timespec* m_now_tv;
 
 	/** buffer shared by UDP connections, since there is only one
 	    datagram at any time. */

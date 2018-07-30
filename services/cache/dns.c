@@ -167,8 +167,8 @@ dns_cache_store_msg(struct module_env* env, struct query_info* qinfo,
 
 	/* there was a reply_info_sortref(rep) here but it seems to be
 	 * unnecessary, because the cache gets locked per rrset. */
-	reply_info_set_ttls(rep, *env->now);
-	store_rrsets(env, rep, *env->now, leeway, pside, qrep, region);
+	reply_info_set_ttls(rep, *env->m_now);
+	store_rrsets(env, rep, *env->m_now, leeway, pside, qrep, region);
 	if(ttl == 0 && !(flags & DNSCACHE_STORE_ZEROTTL)) {
 		/* we do not store the message, but we did store the RRs,
 		 * which could be useful for delegation information */
@@ -320,7 +320,7 @@ cache_fill_missing(struct module_env* env, uint16_t qclass,
 	struct delegpt_ns* ns;
 	struct msgreply_entry* neg;
 	struct ub_packed_rrset_key* akey;
-	time_t now = *env->now;
+	time_t now = *env->m_now;
 	for(ns = dp->nslist; ns; ns = ns->next) {
 		akey = rrset_cache_lookup(env->rrset_cache, ns->name, 
 			ns->namelen, LDNS_RR_TYPE_A, qclass, 0, now, 0);
@@ -709,7 +709,7 @@ fill_any(struct module_env* env,
 	uint8_t* qname, size_t qnamelen, uint16_t qtype, uint16_t qclass,
 	struct regional* region)
 {
-	time_t now = *env->now;
+	time_t now = *env->m_now;
 	struct dns_msg* msg = NULL;
 	uint16_t lookup[] = {LDNS_RR_TYPE_A, LDNS_RR_TYPE_AAAA,
 		LDNS_RR_TYPE_MX, LDNS_RR_TYPE_SOA, LDNS_RR_TYPE_NS,
@@ -765,7 +765,7 @@ dns_cache_lookup(struct module_env* env,
 	struct lruhash_entry* e;
 	struct query_info k;
 	hashvalue_type h;
-	time_t now = *env->now;
+	time_t now = *env->m_now;
 	struct ub_packed_rrset_key* rrset;
 
 	/* lookup first, this has both NXdomains and ANSWER responses */
@@ -938,13 +938,13 @@ dns_cache_store(struct module_env* env, struct query_info* msgqinf,
 		size_t i;
 		for(i=0; i<rep->rrset_count; i++) {
 			packed_rrset_ttl_add((struct packed_rrset_data*)
-				rep->rrsets[i]->entry.data, *env->now);
+				rep->rrsets[i]->entry.data, *env->m_now);
 			ref.key = rep->rrsets[i];
 			ref.id = rep->rrsets[i]->id;
 			/*ignore ret: it was in the cache, ref updated */
 			/* no leeway for typeNS */
 			(void)rrset_cache_update(env->rrset_cache, &ref, 
-				env->alloc, *env->now + 
+				env->alloc, *env->m_now + 
 				((ntohs(ref.key->rk.type)==LDNS_RR_TYPE_NS
 				 && !pside) ? 0:leeway));
 		}
@@ -982,7 +982,7 @@ dns_cache_prefetch_adjust(struct module_env* env, struct query_info* qinfo,
 {
 	struct msgreply_entry* msg;
 	msg = msg_cache_lookup(env, qinfo->qname, qinfo->qname_len,
-		qinfo->qtype, qinfo->qclass, flags, *env->now, 1);
+		qinfo->qtype, qinfo->qclass, flags, *env->m_now, 1);
 	if(msg) {
 		struct reply_info* rep = (struct reply_info*)msg->entry.data;
 		if(rep) {

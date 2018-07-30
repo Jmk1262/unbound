@@ -512,8 +512,9 @@ dnskeyset_verify_rrset(struct module_env* env, struct val_env* ve,
 		}
 	}
 	for(i=0; i<num; i++) {
-		sec = dnskeyset_verify_rrset_sig(env, ve, *env->now, rrset, 
-			dnskey, i, &sortree, reason, section, qstate);
+		sec = dnskeyset_verify_rrset_sig(env, ve, *env->now,
+			*env->m_now, rrset, dnskey, i, &sortree, reason,
+			section, qstate);
 		/* see which algorithm has been fixed up */
 		if(sec == sec_status_secure) {
 			if(!sigalg)
@@ -578,7 +579,7 @@ dnskey_verify_rrset(struct module_env* env, struct val_env* ve,
 			continue;
 		buf_canon = 0;
 		sec = dnskey_verify_rrset_sig(env->scratch, 
-			env->scratch_buffer, ve, *env->now, rrset, 
+			env->scratch_buffer, ve, *env->now, *env->m_now, rrset, 
 			dnskey, dnskey_idx, i, &sortree, &buf_canon, reason,
 			section, qstate);
 		if(sec == sec_status_secure)
@@ -592,7 +593,7 @@ dnskey_verify_rrset(struct module_env* env, struct val_env* ve,
 
 enum sec_status 
 dnskeyset_verify_rrset_sig(struct module_env* env, struct val_env* ve, 
-	time_t now, struct ub_packed_rrset_key* rrset, 
+	time_t now, time_t m_now, struct ub_packed_rrset_key* rrset, 
 	struct ub_packed_rrset_key* dnskey, size_t sig_idx, 
 	struct rbtree_type** sortree, char** reason, sldns_pkt_section section,
 	struct module_qstate* qstate)
@@ -619,7 +620,7 @@ dnskeyset_verify_rrset_sig(struct module_env* env, struct val_env* ve,
 
 		/* see if key verifies */
 		sec = dnskey_verify_rrset_sig(env->scratch, 
-			env->scratch_buffer, ve, now, rrset, dnskey, i, 
+			env->scratch_buffer, ve, now, m_now, rrset, dnskey, i, 
 			sig_idx, sortree, &buf_canon, reason, section, qstate);
 		if(sec == sec_status_secure)
 			return sec;
@@ -1374,7 +1375,7 @@ adjust_ttl(struct val_env* ve, uint32_t unow,
 
 enum sec_status 
 dnskey_verify_rrset_sig(struct regional* region, sldns_buffer* buf, 
-	struct val_env* ve, time_t now,
+	struct val_env* ve, time_t now, time_t m_now,
         struct ub_packed_rrset_key* rrset, struct ub_packed_rrset_key* dnskey,
         size_t dnskey_idx, size_t sig_idx,
 	struct rbtree_type** sortree, int* buf_canon, char** reason,
@@ -1497,7 +1498,7 @@ dnskey_verify_rrset_sig(struct regional* region, sldns_buffer* buf,
 	
 	if(sec == sec_status_secure) {
 		/* check if TTL is too high - reduce if so */
-		adjust_ttl(ve, now, rrset, sig+2+4, sig+2+8, sig+2+12);
+		adjust_ttl(ve, m_now, rrset, sig+2+4, sig+2+8, sig+2+12);
 
 		/* verify inception, expiration dates 
 		 * Do this last so that if you ignore expired-sigs the

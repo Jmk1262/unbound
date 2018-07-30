@@ -115,6 +115,10 @@ struct internal_base {
 	time_t secs;
 	/** timeval with current time */
 	struct timeval now;
+	/** monotonic seconds time pointer points here */
+	time_t m_secs;
+	/** timespec with current monotonic time */
+	struct timespec m_now;
 	/** the event used for slow_accept timeouts */
 	struct ub_event* slow_accept;
 	/** true if slow_accept is enabled */
@@ -166,7 +170,8 @@ comm_base_create(int sigs)
 		free(b);
 		return NULL;
 	}
-	b->eb->base = ub_default_event_base(sigs, &b->eb->secs, &b->eb->now);
+	b->eb->base = ub_default_event_base(sigs, &b->eb->secs, &b->eb->now,
+		&b->eb->m_secs, &b->eb->m_now);
 	if(!b->eb->base) {
 		free(b->eb);
 		free(b);
@@ -229,10 +234,13 @@ comm_base_delete_no_base(struct comm_base* b)
 }
 
 void 
-comm_base_timept(struct comm_base* b, time_t** tt, struct timeval** tv)
+comm_base_timept(struct comm_base* b, time_t** tt, struct timeval** tv, 
+	time_t** m_tt, struct timespec** m_tv)
 {
 	*tt = &b->eb->secs;
 	*tv = &b->eb->now;
+	*m_tt = &b->eb->m_secs;
+	*m_tv = &b->eb->m_now;
 }
 
 void 

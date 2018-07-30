@@ -92,8 +92,9 @@ static void usage(void)
 {
 	const char** m;
 	const char *evnm="event", *evsys="", *evmethod="";
-	time_t t;
+	time_t t, m_t;
 	struct timeval now;
+	struct timespec m_now;
 	struct ub_event_base* base;
 	printf("usage:  unbound [options]\n");
 	printf("	start unbound daemon DNS resolver.\n");
@@ -109,7 +110,7 @@ static void usage(void)
 	printf("   	service - used to start from services control panel\n");
 #endif
 	printf("Version %s\n", PACKAGE_VERSION);
-	base = ub_default_event_base(0,&t,&now);
+	base = ub_default_event_base(0, &t, &now, &m_t, &m_now);
 	ub_get_event_sys(base, &evnm, &evsys, &evmethod);
 	printf("linked libs: %s %s (it uses %s), %s\n", 
 		evnm, evsys, evmethod,

@@ -70,7 +70,8 @@ void ub_get_event_sys(struct ub_event_base*, const char** n, const char** s,
 /** Return a default event base. In the daemon this will be the only event 
  * bases used.
  */
-struct ub_event_base* ub_default_event_base(int, time_t*, struct timeval*);
+struct ub_event_base* ub_default_event_base(int, time_t*, struct timeval*,
+	time_t*, struct timespec*);
 /** Return an ub_event_base constructed for the given libevent event base */
 struct ub_event_base* ub_libevent_event_base(struct event_base*);
 /** Return the libevent base underlying the given ub_event_base.  Will return

@@ -367,13 +367,13 @@ update_cache(struct module_qstate *qstate, int id)
 		rep->ref[i].key = rep->rrsets[i];
 		rep->ref[i].id = rep->rrsets[i]->id;
 	}
-	reply_info_set_ttls(rep, *qstate->env->now);
+	reply_info_set_ttls(rep, *qstate->env->m_now);
 	rep->flags |= (BIT_RA | BIT_QR); /* fix flags to be sensible for */
 	rep->flags &= ~(BIT_AA | BIT_CD);/* a reply based on the cache   */
 	addrtree_insert(tree, (addrkey_t*)edns->subnet_addr, 
 		edns->subnet_source_mask, 
 		sq->ecs_server_in.subnet_scope_mask, rep,
-		rep->ttl, *qstate->env->now);
+		rep->ttl, *qstate->env->m_now);
 	if (acquired_lock) {
 		lock_rw_unlock(&lru_entry->lock);
 	} else {
@@ -410,14 +410,14 @@ lookup_and_reply(struct module_qstate *qstate, int id, struct subnet_qstate *sq)
 		return 0;
 	}
 	node = addrtree_find(tree, (addrkey_t*)ecs->subnet_addr, 
-		ecs->subnet_source_mask, *env->now);
+		ecs->subnet_source_mask, *env->m_now);
 	if (!node) { /* plain old cache miss */
 		lock_rw_unlock(&e->lock);
 		return 0;
 	}
 
 	qstate->return_msg = tomsg(NULL, &qstate->qinfo,
-		(struct reply_info *)node->elem, qstate->region, *env->now,
+		(struct reply_info *)node->elem, qstate->region, *env->m_now,
 		env->scratch);
 	scope = (uint8_t)node->scope;
 	lock_rw_unlock(&e->lock);

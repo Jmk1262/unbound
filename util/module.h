@@ -464,6 +464,10 @@ struct module_env {
 	time_t* now;
 	/** time in microseconds. Relatively recent. */
 	struct timeval* now_tv;
+	/** monotonic time in seconds, converted to integer */
+	time_t* m_now;
+	/** monotonic time in nanoseconds. Relatively recent. */
+	struct timespec* m_now_tv;
 	/** is validation required for messages, controls client-facing
 	 * validation status (AD bits) and servfails */
 	int need_to_validate;

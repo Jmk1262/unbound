@@ -575,7 +575,7 @@ store_rrset(sldns_buffer* pkt, struct msg_parse* msg, struct module_env* env,
 	struct ub_packed_rrset_key* k;
 	struct packed_rrset_data* d;
 	struct rrset_ref ref;
-	time_t now = *env->now;
+	time_t now = *env->m_now;
 
 	k = alloc_special_obtain(env->alloc);
 	if(!k)

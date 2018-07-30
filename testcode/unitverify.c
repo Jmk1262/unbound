@@ -301,6 +301,14 @@ verifytest_file(const char* fname, const char* at_date)
 	struct module_env env;
 	struct val_env ve;
 	time_t now = time(NULL);
+	struct timespec m_tv;
+	time_t m_tv_sec;
+
+	if(clock_gettime(CLOCK_MONOTONIC_RAW, &m_tv) < 0) {
+		fatal_exit("Could not get monotonic time %s", strerror(errno));
+	}
+	m_tv_sec = m_tv.tv_sec;
+
 	unit_show_func("signature verify", fname);
 
 	if(!list)
@@ -311,6 +319,7 @@ verifytest_file(const char* fname, const char* at_date)
 	env.scratch = region;
 	env.scratch_buffer = buf;
 	env.now = &now;
+	env.m_now = &m_tv_sec;
 	ve.date_override = cfg_convert_timeval(at_date);
 	unit_assert(region && buf);
 	dnskey = extract_keys(list, &alloc, region, buf);

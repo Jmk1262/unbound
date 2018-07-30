@@ -795,7 +795,7 @@ validate_positive_response(struct module_env* env, struct val_env* ve,
 		}
 		if(wc && !wc_cached && env->cfg->aggressive_nsec) {
 			rrset_cache_update_wildcard(env->rrset_cache, s, wc, wl,
-				env->alloc, *env->now);
+				env->alloc, *env->m_now);
 			wc_cached = 1;
 		}
 
@@ -1569,7 +1569,7 @@ processInit(struct module_qstate* qstate, struct val_qstate* vq,
 	}
 
 	vq->key_entry = key_cache_obtain(ve->kcache, lookup_name, lookup_len,
-		vq->qchase.qclass, qstate->region, *qstate->env->now);
+		vq->qchase.qclass, qstate->region, *qstate->env->m_now);
 
 	/* there is no key(from DLV) and no trust anchor */
 	if(vq->key_entry == NULL && anchor == NULL) {
@@ -2077,7 +2077,7 @@ val_dlv_init(struct module_qstate* qstate, struct val_qstate* vq,
 	 * give up; insecure is the answer */
 	while(val_neg_dlvlookup(ve->neg_cache, vq->dlv_lookup_name,
 		vq->dlv_lookup_name_len, vq->qchase.qclass,
-		qstate->env->rrset_cache, *qstate->env->now)) {
+		qstate->env->rrset_cache, *qstate->env->m_now)) {
 		/* go up */
 		dname_remove_label(&vq->dlv_lookup_name, 
 			&vq->dlv_lookup_name_len);
@@ -2398,7 +2398,7 @@ processDLVLookup(struct module_qstate* qstate, struct val_qstate* vq,
 	/* check negative cache before making new request */
 	if(val_neg_dlvlookup(ve->neg_cache, vq->dlv_lookup_name,
 		vq->dlv_lookup_name_len, vq->qchase.qclass,
-		qstate->env->rrset_cache, *qstate->env->now)) {
+		qstate->env->rrset_cache, *qstate->env->m_now)) {
 		/* does not exist, go up one (go higher). */
 		dname_remove_label(&vq->dlv_lookup_name, 
 			&vq->dlv_lookup_name_len);
@@ -2568,10 +2568,10 @@ primeResponseToKE(struct ub_packed_rrset_key* dnskey_rrset,
 			errinf(qstate, "no DNSKEY rrset");
 			kkey = key_entry_create_bad(qstate->region, ta->name,
 				ta->namelen, ta->dclass, BOGUS_KEY_TTL,
-				*qstate->env->now);
+				*qstate->env->m_now);
 		} else 	kkey = key_entry_create_null(qstate->region, ta->name,
 				ta->namelen, ta->dclass, NULL_KEY_TTL,
-				*qstate->env->now);
+				*qstate->env->m_now);
 		if(!kkey) {
 			log_err("out of memory: allocate fail prime key");
 			return NULL;
@@ -2603,10 +2603,10 @@ primeResponseToKE(struct ub_packed_rrset_key* dnskey_rrset,
 			errinf(qstate, reason);
 			kkey = key_entry_create_bad(qstate->region, ta->name,
 				ta->namelen, ta->dclass, BOGUS_KEY_TTL,
-				*qstate->env->now);
+				*qstate->env->m_now);
 		} else 	kkey = key_entry_create_null(qstate->region, ta->name,
 				ta->namelen, ta->dclass, NULL_KEY_TTL,
-				*qstate->env->now);
+				*qstate->env->m_now);
 		if(!kkey) {
 			log_err("out of memory: allocate null prime key");
 			return NULL;
@@ -2686,7 +2686,7 @@ ds_response_to_ke(struct module_qstate* qstate, struct val_qstate* vq,
 			 * there was no DS. */
 			*ke = key_entry_create_null(qstate->region, 
 				qinfo->qname, qinfo->qname_len, qinfo->qclass, 
-				ub_packed_rrset_ttl(ds), *qstate->env->now);
+				ub_packed_rrset_ttl(ds), *qstate->env->m_now);
 			return (*ke) != NULL;
 		}
 
@@ -2694,7 +2694,7 @@ ds_response_to_ke(struct module_qstate* qstate, struct val_qstate* vq,
 		log_query_info(VERB_DETAIL, "validated DS", qinfo);
 		*ke = key_entry_create_rrset(qstate->region,
 			qinfo->qname, qinfo->qname_len, qinfo->qclass, ds,
-			NULL, *qstate->env->now);
+			NULL, *qstate->env->m_now);
 		return (*ke) != NULL;
 	} else if(subtype == VAL_CLASS_NODATA || 
 		subtype == VAL_CLASS_NAMEERROR) {
@@ -2726,7 +2726,7 @@ ds_response_to_ke(struct module_qstate* qstate, struct val_qstate* vq,
 				*ke = key_entry_create_null(qstate->region, 
 					qinfo->qname, qinfo->qname_len, 
 					qinfo->qclass, proof_ttl,
-					*qstate->env->now);
+					*qstate->env->m_now);
 				return (*ke) != NULL;
 			case sec_status_insecure:
 				verbose(VERB_DETAIL, "NSEC RRset for the "
@@ -2759,7 +2759,7 @@ ds_response_to_ke(struct module_qstate* qstate, struct val_qstate* vq,
 				*ke = key_entry_create_null(qstate->region, 
 					qinfo->qname, qinfo->qname_len, 
 					qinfo->qclass, proof_ttl,
-					*qstate->env->now);
+					*qstate->env->m_now);
 				return (*ke) != NULL;
 			case sec_status_indeterminate:
 				verbose(VERB_DETAIL, "NSEC3s for the "
@@ -2836,7 +2836,7 @@ ds_response_to_ke(struct module_qstate* qstate, struct val_qstate* vq,
 return_bogus:
 	*ke = key_entry_create_bad(qstate->region, qinfo->qname,
 		qinfo->qname_len, qinfo->qclass, 
-		BOGUS_KEY_TTL, *qstate->env->now);
+		BOGUS_KEY_TTL, *qstate->env->m_now);
 	return (*ke) != NULL;
 }
 
@@ -2955,7 +2955,7 @@ process_dnskey_response(struct module_qstate* qstate, struct val_qstate* vq,
 		}
 		vq->key_entry = key_entry_create_bad(qstate->region, 
 			qinfo->qname, qinfo->qname_len, qinfo->qclass,
-			BOGUS_KEY_TTL, *qstate->env->now);
+			BOGUS_KEY_TTL, *qstate->env->m_now);
 		if(!vq->key_entry) {
 			log_err("alloc failure in missing dnskey response");
 			/* key_entry is NULL for failure in Validate */

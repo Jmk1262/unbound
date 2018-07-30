@@ -121,6 +121,10 @@ struct event_base
 	time_t* time_secs;
 	/** where to store time in microseconds */
 	struct timeval* time_tv;
+	/** where to store monotonic time in seconds */
+	time_t* m_time_secs;
+	/** where to store time in nanoseconds */
+	struct timespec* m_time_tv;
 };
 
 /**
@@ -149,7 +153,8 @@ struct event {
 
 /* function prototypes (some are as they appear in event.h) */
 /** create event base */
-void *event_init(time_t* time_secs, struct timeval* time_tv);
+void *event_init(time_t* time_secs, struct timeval* time_tv,
+	time_t* monotonic_time_secs, struct timespec* monotonic_time_tp);
 /** get version */
 const char *event_get_version(void);
 /** get polling method, select */

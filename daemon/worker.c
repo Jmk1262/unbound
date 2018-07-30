@@ -1759,7 +1759,8 @@ worker_init(struct worker* worker, struct config_file *cfg,
 		worker->thread_num);
 	alloc_set_id_cleanup(&worker->alloc, &worker_alloc_cleanup, worker);
 	worker->env = *worker->daemon->env;
-	comm_base_timept(worker->base, &worker->env.now, &worker->env.now_tv);
+	comm_base_timept(worker->base, &worker->env.now, &worker->env.now_tv,
+			&worker->env.m_now, &worker->env.m_now_tv);
 	if(worker->thread_num == 0)
 		log_set_time(worker->env.now);
 	worker->env.worker = worker;

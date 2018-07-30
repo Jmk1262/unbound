@@ -929,9 +929,13 @@ comm_base_delete(struct comm_base* b)
 }
 
 void
-comm_base_timept(struct comm_base* b, time_t** tt, struct timeval** tv)
+comm_base_timept(struct comm_base* b, time_t** tt, struct timeval** tv, 
+	time_t** m_tt, struct timespec** m_tv)
 {
 	struct replay_runtime* runtime = (struct replay_runtime*)b;
+	/* TODO: make it all work with monotonic time */
+	(void)m_tt;
+	(void)m_tv;
 	*tt = &runtime->now_secs;
 	*tv = &runtime->now_tv;
 }

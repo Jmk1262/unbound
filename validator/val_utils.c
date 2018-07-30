@@ -349,7 +349,7 @@ val_verify_rrset(struct module_env* env, struct val_env* ve,
 		return d->security;
 	}
 	/* check in the cache if verification has already been done */
-	rrset_check_sec_status(env->rrset_cache, rrset, *env->now);
+	rrset_check_sec_status(env->rrset_cache, rrset, *env->m_now);
 	if(d->security == sec_status_secure) {
 		log_nametypeclass(VERB_ALGO, "verify rrset from cache", 
 			rrset->rk.dname, ntohs(rrset->rk.type), 
@@ -383,7 +383,7 @@ val_verify_rrset(struct module_env* env, struct val_env* ve,
 			lock_basic_unlock(&ve->bogus_lock);
 		}
 		/* if status updated - store in cache for reuse */
-		rrset_update_sec_status(env->rrset_cache, rrset, *env->now);
+		rrset_update_sec_status(env->rrset_cache, rrset, *env->m_now);
 	}
 
 	return sec;
@@ -569,16 +569,16 @@ val_verify_new_DNSKEYs(struct regional* region, struct module_env* env,
 		return key_entry_create_rrset(region, 
 			ds_rrset->rk.dname, ds_rrset->rk.dname_len,
 			ntohs(ds_rrset->rk.rrset_class), dnskey_rrset,
-			downprot?sigalg:NULL, *env->now);
+			downprot?sigalg:NULL, *env->m_now);
 	} else if(sec == sec_status_insecure) {
 		return key_entry_create_null(region, ds_rrset->rk.dname,
 			ds_rrset->rk.dname_len, 
 			ntohs(ds_rrset->rk.rrset_class),
-			rrset_get_ttl(ds_rrset), *env->now);
+			rrset_get_ttl(ds_rrset), *env->m_now);
 	}
 	return key_entry_create_bad(region, ds_rrset->rk.dname,
 		ds_rrset->rk.dname_len, ntohs(ds_rrset->rk.rrset_class),
-		BOGUS_KEY_TTL, *env->now);
+		BOGUS_KEY_TTL, *env->m_now);
 }
 
 enum sec_status 
@@ -708,16 +708,16 @@ val_verify_new_DNSKEYs_with_ta(struct regional* region, struct module_env* env,
 		return key_entry_create_rrset(region, 
 			dnskey_rrset->rk.dname, dnskey_rrset->rk.dname_len,
 			ntohs(dnskey_rrset->rk.rrset_class), dnskey_rrset,
-			downprot?sigalg:NULL, *env->now);
+			downprot?sigalg:NULL, *env->m_now);
 	} else if(sec == sec_status_insecure) {
 		return key_entry_create_null(region, dnskey_rrset->rk.dname,
 			dnskey_rrset->rk.dname_len, 
 			ntohs(dnskey_rrset->rk.rrset_class),
-			rrset_get_ttl(dnskey_rrset), *env->now);
+			rrset_get_ttl(dnskey_rrset), *env->m_now);
 	}
 	return key_entry_create_bad(region, dnskey_rrset->rk.dname,
 		dnskey_rrset->rk.dname_len, ntohs(dnskey_rrset->rk.rrset_class),
-		BOGUS_KEY_TTL, *env->now);
+		BOGUS_KEY_TTL, *env->m_now);
 }
 
 int 
@@ -1022,7 +1022,7 @@ val_mark_indeterminate(struct reply_info* rep, struct val_anchors* anchors,
 		{ 	
 			/* mark as indeterminate */
 			d->security = sec_status_indeterminate;
-			rrset_update_sec_status(r, rep->rrsets[i], *env->now);
+			rrset_update_sec_status(r, rep->rrsets[i], *env->m_now);
 		}
 	}
 }
@@ -1039,7 +1039,7 @@ val_mark_insecure(struct reply_info* rep, uint8_t* kname,
 		   dname_subdomain_c(rep->rrsets[i]->rk.dname, kname)) {
 			/* mark as insecure */
 			d->security = sec_status_insecure;
-			rrset_update_sec_status(r, rep->rrsets[i], *env->now);
+			rrset_update_sec_status(r, rep->rrsets[i], *env->m_now);
 		}
 	}
 }
@@ -1139,11 +1139,11 @@ val_find_DS(struct module_env* env, uint8_t* nm, size_t nmlen, uint16_t c,
 	struct query_info qinfo;
 	struct ub_packed_rrset_key *rrset = rrset_cache_lookup(
 		env->rrset_cache, nm, nmlen, LDNS_RR_TYPE_DS, c, 0, 
-		*env->now, 0);
+		*env->m_now, 0);
 	if(rrset) {
 		/* DS rrset exists. Return it to the validator immediately*/
 		struct ub_packed_rrset_key* copy = packed_rrset_copy_region(
-			rrset, region, *env->now);
+			rrset, region, *env->m_now);
 		lock_rw_unlock(&rrset->entry.lock);
 		if(!copy)
 			return NULL;
@@ -1163,6 +1163,6 @@ val_find_DS(struct module_env* env, uint8_t* nm, size_t nmlen, uint16_t c,
 	qinfo.local_alias = NULL;
 	/* do not add SOA to reply message, it is going to be used internal */
 	msg = val_neg_getmsg(env->neg_cache, &qinfo, region, env->rrset_cache,
-		env->scratch_buffer, *env->now, 0, topname, env->cfg);
+		env->scratch_buffer, *env->m_now, 0, topname, env->cfg);
 	return msg;
 }

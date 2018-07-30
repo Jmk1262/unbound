@@ -1214,7 +1214,7 @@ processInitRequest(struct module_qstate* qstate, struct iter_qstate* iq,
 			msg = val_neg_getmsg(qstate->env->neg_cache, &iq->qchase,
 				qstate->region, qstate->env->rrset_cache,
 				qstate->env->scratch_buffer, 
-				*qstate->env->now, 1/*add SOA*/, NULL, 
+				*qstate->env->m_now, 1/*add SOA*/, NULL, 
 				qstate->env->cfg);
 		}
 		/* item taken from cache does not match our query name, thus
@@ -1322,7 +1322,7 @@ processInitRequest(struct module_qstate* qstate, struct iter_qstate* iq,
 		     iq->dp = dns_cache_find_delegation(qstate->env, delname, 
 			delnamelen, iq->qchase.qtype, iq->qchase.qclass, 
 			qstate->region, &iq->deleg_msg,
-			*qstate->env->now+qstate->prefetch_leeway);
+			*qstate->env->m_now+qstate->prefetch_leeway);
 		else iq->dp = NULL;
 
 		/* If the cache has returned nothing, then we have a 
@@ -1378,12 +1378,12 @@ processInitRequest(struct module_qstate* qstate, struct iter_qstate* iq,
 			otherwise valid data in the cache */
 		if(!iq->ratelimit_ok && infra_ratelimit_exceeded(
 			qstate->env->infra_cache, iq->dp->name,
-			iq->dp->namelen, *qstate->env->now)) {
+			iq->dp->namelen, *qstate->env->m_now)) {
 			/* and increment the rate, so that the rate for time
 			 * now will also exceed the rate, keeping cache fresh */
 			(void)infra_ratelimit_inc(qstate->env->infra_cache,
 				iq->dp->name, iq->dp->namelen,
-				*qstate->env->now);
+				*qstate->env->m_now);
 			/* see if we are passed through with slip factor */
 			if(qstate->env->cfg->ratelimit_factor != 0 &&
 				ub_random_max(qstate->env->rnd,
@@ -1632,7 +1632,7 @@ generate_parentside_target_query(struct module_qstate* qstate,
 			subiq->dp = dns_cache_find_delegation(qstate->env, 
 				name, namelen, qtype, qclass, subq->region,
 				&subiq->deleg_msg,
-				*qstate->env->now+subq->prefetch_leeway); 
+				*qstate->env->m_now+subq->prefetch_leeway); 
 			/* if no dp, then it's from root, refetch unneeded */
 			if(subiq->dp) { 
 				subiq->dnssec_expected = iter_indicates_dnssec(
@@ -2374,7 +2374,7 @@ processQueryTargets(struct module_qstate* qstate, struct iter_qstate* iq,
 	/* if not forwarding, check ratelimits per delegationpoint name */
 	if(!(iq->chase_flags & BIT_RD) && !iq->ratelimit_ok) {
 		if(!infra_ratelimit_inc(qstate->env->infra_cache, iq->dp->name,
-			iq->dp->namelen, *qstate->env->now)) {
+			iq->dp->namelen, *qstate->env->m_now)) {
 			lock_basic_lock(&ie->queries_ratelimit_lock);
 			ie->num_queries_ratelimited++;
 			lock_basic_unlock(&ie->queries_ratelimit_lock);
@@ -2411,7 +2411,7 @@ processQueryTargets(struct module_qstate* qstate, struct iter_qstate* iq,
 			&target->addr, target->addrlen);
 		if(!(iq->chase_flags & BIT_RD) && !iq->ratelimit_ok)
 		    infra_ratelimit_dec(qstate->env->infra_cache, iq->dp->name,
-			iq->dp->namelen, *qstate->env->now);
+			iq->dp->namelen, *qstate->env->m_now);
 		if(qstate->env->cfg->qname_minimisation)
 			iq->minimisation_state = SKIP_MINIMISE_STATE;
 		return next_state(iq, QUERYTARGETS_STATE);
@@ -2639,7 +2639,7 @@ processQueryResponse(struct module_qstate* qstate, struct iter_qstate* iq,
 			 * our queries to the given name */
 			infra_ratelimit_dec(qstate->env->infra_cache,
 				iq->dp->name, iq->dp->namelen,
-				*qstate->env->now);
+				*qstate->env->m_now);
 		}
 
 		/* if hardened, only store referral if we asked for it */
@@ -2814,7 +2814,7 @@ processQueryResponse(struct module_qstate* qstate, struct iter_qstate* iq,
 			if(!infra_set_lame(qstate->env->infra_cache, 
 				&qstate->reply->addr, qstate->reply->addrlen, 
 				iq->dp->name, iq->dp->namelen, 
-				*qstate->env->now, dnsseclame, 0,
+				*qstate->env->m_now, dnsseclame, 0,
 				iq->qchase.qtype))
 				log_err("mark host lame: out of memory");
 		}
@@ -2832,7 +2832,7 @@ processQueryResponse(struct module_qstate* qstate, struct iter_qstate* iq,
 			if(!infra_set_lame(qstate->env->infra_cache, 
 				&qstate->reply->addr, qstate->reply->addrlen, 
 				iq->dp->name, iq->dp->namelen, 
-				*qstate->env->now, 0, 1, iq->qchase.qtype))
+				*qstate->env->m_now, 0, 1, iq->qchase.qtype))
 				log_err("mark host lame: out of memory");
 		} 
 	} else if(type == RESPONSE_TYPE_THROWAWAY) {

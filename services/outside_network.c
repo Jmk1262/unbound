@@ -725,7 +725,8 @@ outside_network_create(struct comm_base *base, size_t bufsize,
 		log_err("malloc failed");
 		return NULL;
 	}
-	comm_base_timept(base, &outnet->now_secs, &outnet->now_tv);
+	comm_base_timept(base, &outnet->now_secs, &outnet->now_tv,
+			&outnet->m_now_secs, &outnet->m_now_tv);
 	outnet->base = base;
 	outnet->num_tcp = num_tcp;
 	outnet->num_tcp_outgoing = 0;

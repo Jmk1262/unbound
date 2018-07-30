@@ -78,14 +78,19 @@ settime(struct event_base* base)
 	if(gettimeofday(base->time_tv, NULL) < 0) {
 		return -1;
 	}
+	if(clock_gettime(CLOCK_MONOTONIC_RAW, base->m_time_tv) < 0) {
+		return -1;
+	}
 #ifndef S_SPLINT_S
 	*base->time_secs = (time_t)base->time_tv->tv_sec;
+	*base->m_time_secs = (time_t)base->m_time_tv->tv_sec;
 #endif
 	return 0;
 }
 
 /** create event base */
-void *event_init(time_t* time_secs, struct timeval* time_tv)
+void *event_init(time_t* time_secs, struct timeval* time_tv,
+	time_t* m_time_secs, struct timespec* m_time_tv)
 {
 	struct event_base* base = (struct event_base*)malloc(
 		sizeof(struct event_base));
@@ -94,6 +99,8 @@ void *event_init(time_t* time_secs, struct timeval* time_tv)
 	memset(base, 0, sizeof(*base));
 	base->time_secs = time_secs;
 	base->time_tv = time_tv;
+	base->m_time_secs = m_time_secs;
+	base->m_time_tv = m_time_tv;
 	if(settime(base) < 0) {
 		event_base_free(base);
 		return NULL;
