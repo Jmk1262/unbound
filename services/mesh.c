@@ -1098,11 +1098,15 @@ mesh_send_reply(struct mesh_state* m, int rcode, struct reply_info* rep,
 		if(rcode == LDNS_RCODE_SERVFAIL) {
 			if(!inplace_cb_reply_servfail_call(m->s.env, &m->s.qinfo, &m->s,
 				rep, rcode, &r->edns, NULL, m->s.region))
-					r->edns.opt_list = NULL;
+				r->edns.opt_list = NULL;
+			extended_error_append_options(m->s.extended_error,
+				&r->edns, m->s.region);
 		} else { 
 			if(!inplace_cb_reply_call(m->s.env, &m->s.qinfo, &m->s, rep, rcode,
 				&r->edns, NULL, m->s.region))
-					r->edns.opt_list = NULL;
+				r->edns.opt_list = NULL;
+			extended_error_append_options(m->s.extended_error,
+				&r->edns, m->s.region);
 		}
 		error_encode(r_buffer, rcode, &m->s.qinfo, r->qid,
 			r->qflags, &r->edns);
@@ -1120,6 +1124,8 @@ mesh_send_reply(struct mesh_state* m, int rcode, struct reply_info* rep,
 			!apply_edns_options(&r->edns, &edns_bak,
 				m->s.env->cfg, r->query_reply.c,
 				m->s.region) ||
+			!extended_error_append_options(m->s.extended_error,
+				&r->edns, m->s.region) ||
 			!reply_info_answer_encode(&m->s.qinfo, rep, r->qid, 
 			r->qflags, r_buffer, 0, 1, m->s.env->scratch,
 			udp_size, &r->edns, (int)(r->edns.bits & EDNS_DO),

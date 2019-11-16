@@ -1,25 +1,25 @@
 /*
- * util/edns.c - handle base EDNS options.
+ * util/extended_error.c - Handling extended DNS errors
  *
- * Copyright (c) 2018, NLnet Labs. All rights reserved.
+ * Copyright (c) 2019, NLnet Labs. All rights reserved.
  *
  * This software is open source.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  * Redistributions of source code must retain the above copyright notice,
  * this list of conditions and the following disclaimer.
- *
+ * 
  * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- *
+ * 
  * Neither the name of the NLNET LABS nor the names of its contributors may
  * be used to endorse or promote products derived from this software without
  * specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,52 +33,64 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- *
- * This file contains functions for base EDNS options.
- */
-
-#include "config.h"
-#include "util/edns.h"
-#include "util/config_file.h"
-#include "util/netevent.h"
-#include "util/regional.h"
 #include "util/extended_error.h"
-#include "util/data/msgparse.h"
+#include "util/regional.h"
+#include "sldns/sbuffer.h"
 #include "util/data/msgreply.h"
 
-static int edns_keepalive(struct edns_data* edns_out, struct edns_data* edns_in,
-		struct comm_point* c, struct regional* region)
+int extended_error_register(struct regional* region,
+	struct extended_error** first, uint16_t flags, int rcode, int icode,
+	char* extra_text)
 {
-	if(c->type == comm_udp)
-		return 1;
+	struct extended_error* e;
+	e = (struct extended_error*)regional_alloc(region, sizeof(*e));
+	e->flags = flags;
+	e->code = (uint16_t)icode;
+	e->code |= ((uint16_t)rcode << 12);
+	if(extra_text)
+		e->extra_text = regional_strdup(region, extra_text);
+	else
+		e->extra_text = NULL;
+	e->next = NULL;
 
-	/* To respond with a Keepalive option, the client connection
-	 * must have received one message with a TCP Keepalive EDNS option,
-	 * and that option must have 0 length data. Subsequent messages
-	 * sent on that connection will have a TCP Keepalive option.
-	 */
-	if(c->tcp_keepalive ||
-		edns_opt_list_find(edns_in->opt_list, LDNS_EDNS_KEEPALIVE)) {
-		int keepalive = c->tcp_timeout_msec / 100;
-		uint8_t data[2];
-		data[0] = (uint8_t)((keepalive >> 8) & 0xff);
-		data[1] = (uint8_t)(keepalive & 0xff);
-		if(!edns_opt_list_append(&edns_out->opt_list, LDNS_EDNS_KEEPALIVE,
-			sizeof(data), data, region))
-			return 0;
-		c->tcp_keepalive = 1;
+	verbose(VERB_OPS, "extended error registered");
+
+	/* add to qstate linked list */
+	if(!*first)
+		*first = e;
+	else {
+		struct extended_error* l = *first;
+		while(l->next) 
+			l = l->next;
+		l->next = e;
 	}
 	return 1;
 }
 
-int apply_edns_options(struct edns_data* edns_out, struct edns_data* edns_in,
-	struct config_file* cfg, struct comm_point* c, struct regional* region)
+int extended_error_append_options(struct extended_error* e,
+	struct edns_data* edns_out, struct regional* region)
 {
-	if(cfg->do_tcp_keepalive &&
-		!edns_keepalive(edns_out, edns_in, c, region))
-		return 0;
+	size_t extratextlen = 0;
+	sldns_buffer* buf = sldns_buffer_new(BUFSIZ);
+	while(e) {
+		verbose(VERB_OPS, "extended error option appended");
+		sldns_buffer_clear(buf);
+		sldns_buffer_write_u16(buf, e->flags);
+		sldns_buffer_write_u16(buf, e->code);
+		/* copy str without \0 */
 
+		if(e->extra_text) {
+			extratextlen = strlen(e->extra_text);
+			sldns_buffer_write(buf, e->extra_text,
+				extratextlen * sizeof(char));
+		}
+		e = e->next;
+
+		/* add option to edns opts list */
+		edns_opt_list_append(&edns_out->opt_list,
+			EE_OPT_CODE, 4 + extratextlen,
+			sldns_buffer_begin(buf), region);
+	}
+	sldns_buffer_free(buf);
 	return 1;
 }

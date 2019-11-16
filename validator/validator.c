@@ -60,6 +60,7 @@
 #include "util/regional.h"
 #include "util/config_file.h"
 #include "util/fptr_wlist.h"
+#include "util/extended_error.h"
 #include "sldns/rrdef.h"
 #include "sldns/wire2str.h"
 #include "sldns/str2wire.h"
@@ -1860,6 +1861,10 @@ processValidate(struct module_qstate* qstate, struct val_qstate* vq,
 		          "INSECURE status of unsigned response.");
 		errinf(qstate, "no signatures");
 		errinf_origin(qstate, qstate->reply_origin);
+#if 0
+		extended_error_register(qstate->region, &qstate->extended_error,
+				0 /* no R bit */, LDNS_RCODE_SERVFAIL, 5, "hello");
+#endif
 		vq->chase_reply->security = sec_status_bogus;
 		return 1;
 	}
@@ -1892,6 +1897,11 @@ processValidate(struct module_qstate* qstate, struct val_qstate* vq,
 		else {
 			verbose(VERB_DETAIL, "Validate: message contains "
 				"bad rrsets");
+#if 0
+			extended_error_register(qstate->region,
+				&qstate->extended_error, EE_RETRY,
+				LDNS_RCODE_SERVFAIL, 1, "hello");
+#endif
 			return 1;
 		}
 	}

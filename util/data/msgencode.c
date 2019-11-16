@@ -912,6 +912,7 @@ error_encode(sldns_buffer* buf, int r, struct query_info* qinfo,
 	}
 	sldns_buffer_flip(buf);
 	if(edns) {
+#if 0
 		struct edns_data es = *edns;
 		es.edns_version = EDNS_ADVERTISED_VERSION;
 		es.udp_size = EDNS_ADVERTISED_SIZE;
@@ -921,5 +922,7 @@ error_encode(sldns_buffer* buf, int r, struct query_info* qinfo,
 			edns->udp_size)
 			return;
 		attach_edns_record(buf, &es);
+#endif
+		attach_edns_record(buf, edns);
 	}
 }

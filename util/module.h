@@ -156,6 +156,7 @@
 #include "util/storage/lruhash.h"
 #include "util/data/msgreply.h"
 #include "util/data/msgparse.h"
+#include "util/extended_error.h"
 struct sldns_buffer;
 struct alloc_cache;
 struct rrset_cache;
@@ -599,6 +600,8 @@ struct module_qstate {
 	struct regional* region;
 	/** failure reason information if val-log-level is high */
 	struct config_strlist* errinf;
+
+	struct extended_error* extended_error;
 
 	/** which module is executing */
 	int curmod;
